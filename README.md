@@ -2,7 +2,7 @@
 
 *Pin your genius, drag your chaos, and never lose a fleeting thought again.*
 
-![The Digital Napkin Screenshot](https://github.com/OnkarPawar1/TheDigitalNapkin/blob/main/TheDigitalNapkin.png)
+![The Digital Napkin Screenshot](https://raw.githubusercontent.com/OnkarPawar1/TheDigitalNapkin/main/TheDigitalNapkin.png)
 
 **The Digital Napkin** is a feature-rich, client-side-only notepad application built with pure Vanilla JavaScript. It's designed to be your go-to place for quick thoughts, brilliant ideas, and everything in between. No sign-up, no cloud, no fuss—just your notes, right in your browser.
 
@@ -50,11 +50,11 @@ Since this is a client-side-only application, getting it running is as simple as
 
 1.  Clone the repository:
     ```sh
-    git clone https://github.com/your-username/cust_notepad.git
+    git clone https://github.com/OnkarPawar1/TheDigitalNapkin.git
     ```
 2.  Navigate to the project directory:
     ```sh
-    cd cust_notepad
+    cd TheDigitalNapkin
     ```
 3.  Open the `index.html` file in your favorite web browser.
 
@@ -62,7 +62,7 @@ That's it! You're ready to start jotting down your thoughts.
 
 ---
 
-## 💡 The "Technologiyaa" Explained
+## 💡 The "Technology" Explained
 
 > **Quick Note:** Your brilliant thoughts are saved right here in your browser using `localStorage`. They'll ghost you forever if you clear your site data! 👻
 
