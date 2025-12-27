@@ -2,7 +2,7 @@
 
 *Pin your genius, drag your chaos, and never lose a fleeting thought again.*
 
-![The Digital Napkin Screenshot](TheDigitalNapkin/TheDigitalNapkin.png)
+![The Digital Napkin Screenshot](https://github.com/OnkarPawar1/TheDigitalNapkin/blob/main/TheDigitalNapkin.png)
 
 **The Digital Napkin** is a feature-rich, client-side-only notepad application built with pure Vanilla JavaScript. It's designed to be your go-to place for quick thoughts, brilliant ideas, and everything in between. No sign-up, no cloud, no fuss—just your notes, right in your browser.
 
