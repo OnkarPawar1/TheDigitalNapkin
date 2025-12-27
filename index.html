@@ -1,0 +1,894 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Digital Napkin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        body.dark-mode {
+            background-color: #121212;
+            color: #e0e0e0;
+        }
+        #header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        #header h1 {
+            margin: 0;
+        }
+        .tagline {
+            margin: 4px 0 0;
+            font-size: 14px;
+            color: #555;
+            font-style: italic;
+        }
+        body.dark-mode .tagline {
+            color: #bbb;
+        }
+        .storage-info {
+            margin: 5px 0 0;
+            font-size: 12px;
+            color: #666;
+        }
+        body.dark-mode .storage-info {
+            color: #aaa;
+        }
+        #search-bar {
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            width: 250px;
+        }
+        .header-actions button {
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f0f0f0;
+            cursor: pointer;
+        }
+        body.dark-mode .header-actions button {
+            background-color: #333;
+        }
+        .header-actions .btn-danger {
+            background-color: #ffcdd2;
+            color: #b71c1c;
+        }
+        body.dark-mode .header-actions .btn-danger {
+            background-color: #b71c1c;
+            color: #ffcdd2;
+        }
+        #app-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        #notes-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        .note {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            cursor: move;
+            transition: box-shadow 0.3s;
+        }
+        .note.pinned {
+            order: -1; /* Pinned notes go to the top */
+            outline: 2px dotted #ffc107;
+            outline-offset: -6px;
+        }
+        .note.dragging {
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+            opacity: 0.5;
+        }
+        .note-header {
+            /* This class is no longer needed for buttons */
+        }
+        .note input[type="text"] {
+            border: none;
+            font-weight: bold;
+            font-size: 18px;
+            padding: 5px;
+            margin-bottom: 10px;
+            background-color: transparent;
+            flex-grow: 1;
+        }
+        .note-header-buttons {
+            /* This class is no longer needed */
+        }
+        .note .note-content {
+            border: none;
+            resize: vertical;
+            flex-grow: 1;
+            font-family: inherit;
+            font-size: 16px;
+            padding: 5px;
+            min-height: 100px;
+            max-height: 250px; /* Truncate long notes */
+            overflow-y: auto; /* Hide overflowing content */
+            background-color: transparent;
+        }
+        .note .note-content img { max-width: 100%; border-radius: 4px; margin: 5px 0; }
+        .note input[type="text"]:focus,
+        .note .note-content:focus {
+            outline: 1px dotted green;
+        }
+        .note-footer {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            font-size: 12px;
+            padding-top: 10px;
+            gap: 2px;
+        }
+        body.dark-mode .note-footer {
+            color: #aaa;
+        }
+        .note-buttons {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 4px;
+            align-items: center;
+            margin-top: 10px;
+        }
+        .note-buttons button {
+            background: none;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            padding: 8px;
+            color: #333;
+            position: relative;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s, transform 0.2s;
+            font-size: 14px;
+        }
+        .note-buttons button:hover {
+            transform: scale(1.1);
+            filter: brightness(90%);
+        }
+        .btn-pin { background-color: #ffecb3; color: #6d4c41; }
+        .btn-preview { background-color: #cfd8dc; color: #37474f; }
+        .btn-color { background-color: #e1bee7; color: #4a148c; }
+        .btn-paste { background-color: #c8e6c9; color: #1b5e20; }
+        .btn-clear { background-color: #d7ccc8; color: #3e2723; }
+        .btn-copy { background-color: #b2ebf2; color: #006064; }
+        .btn-copy-html { background-color: #b2dfdb; color: #004d40; }
+        .btn-download { background-color: #bbdefb; color: #0d47a1; }
+        .btn-delete { background-color: #ffcdd2; color: #b71c1c; }
+        .btn-export-xml { background-color: #ffcc80; color: #e65100; }
+
+        body.dark-mode .note-buttons button {
+            filter: brightness(85%);
+        }
+        body.dark-mode .note-buttons button:hover {
+            filter: brightness(70%);
+        }
+        body.dark-mode .btn-pin { background-color: #614a19; color: #ffecb3; }
+        body.dark-mode .btn-preview { background-color: #37474f; color: #cfd8dc; }
+        body.dark-mode .btn-color { background-color: #4a148c; color: #e1bee7; }
+        body.dark-mode .btn-paste { background-color: #1b5e20; color: #c8e6c9; }
+        body.dark-mode .btn-clear { background-color: #3e2723; color: #d7ccc8; }
+        body.dark-mode .btn-copy { background-color: #006064; color: #b2ebf2; }
+        body.dark-mode .btn-copy-html { background-color: #004d40; color: #b2dfdb; }
+        body.dark-mode .btn-download { background-color: #0d47a1; color: #bbdefb; }
+        body.dark-mode .btn-delete { background-color: #b71c1c; color: #ffcdd2; }
+        body.dark-mode .btn-export-xml { background-color: #e65100; color: #ffcc80; }
+        
+        .note-buttons button:active {
+            transform: scale(0.95);
+        }
+        .copy-feedback {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #4CAF50;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        #add-note-btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px 20px;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 24px;
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        /* Dark Mode Toggle */
+        .theme-switch-wrapper {
+            display: flex;
+            align-items: center;
+        }
+        .theme-switch {
+            display: inline-block;
+            height: 24px;
+            position: relative;
+            width: 50px;
+            margin-left: 10px;
+        }
+        .theme-switch input { display:none; }
+        .slider {
+            background-color: #ccc;
+            bottom: 0;
+            cursor: pointer;
+            left: 0;
+            position: absolute;
+            right: 0;
+            top: 0;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        .slider:before {
+            background-color: #fff;
+            bottom: 4px;
+            content: "";
+            height: 16px;
+            left: 4px;
+            position: absolute;
+            transition: .4s;
+            width: 16px;
+            border-radius: 50%;
+        }
+        input:checked + .slider { background-color: #4CAF50; }
+        input:checked + .slider:before { transform: translateX(26px); }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.6);
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 800px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            position: relative;
+        }
+        body.dark-mode .modal-content {
+            background-color: #2c2c2c;
+        }
+        .close-button {
+            color: #aaa;
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close-button:hover { color: #f44336; }
+    </style>
+</head>
+<body>
+
+<div id="app-container">
+    <div id="header">
+        <div>
+            <h1>The Digital Napkin</h1>
+            <p class="tagline">Pin your genius, drag your chaos, and never lose a fleeting thought again.</p>
+            <p class="storage-info"><strong>Quick Note:</strong> Your brilliant thoughts are saved right here in your browser. They'll ghost you forever if you clear your site data! 👻</p>
+            <p class="storage-info"><strong>P.S.</strong> Use 'Export All' to save your genius to a file. 'Import' will bring it all back if you ever need it! 💾</p>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px; align-items: flex-end;">
+            <div style="display: flex; align-items: center; gap: 20px;">
+                <input type="text" id="search-bar" placeholder="Search notes...">
+                <div class="theme-switch-wrapper" title="Toggle for your inner night owl (or early bird).">
+                    <i class="fas fa-sun"></i>
+                    <label class="theme-switch">
+                        <input type="checkbox" id="theme-toggle">
+                        <span class="slider"></span>
+                    </label>
+                    <i class="fas fa-moon" style="margin-left: 5px;"></i>
+                </div>
+            </div>
+            <div class="header-actions" style="display: flex; gap: 10px;">
+                <button id="import-btn">Import</button>
+                <button id="export-all-btn">Export All</button>
+                <button id="clear-all-btn" class="btn-danger">Clear All</button>
+                <input type="file" id="import-file-input" accept=".xml" style="display: none;">
+            </div>
+        </div>
+    </div>
+    <div id="notes-container"></div>
+    <button id="add-note-btn" title="Unleash a new brilliant (or silly) idea!">+</button>
+</div>
+
+<!-- The Modal -->
+<div id="preview-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-button">&times;</span>
+        <div id="modal-body"></div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const notesContainer = document.getElementById('notes-container');
+    const addNoteBtn = document.getElementById('add-note-btn');
+    const searchBar = document.getElementById('search-bar');
+    const themeToggle = document.getElementById('theme-toggle');
+    const modal = document.getElementById('preview-modal');
+    const modalBody = document.getElementById('modal-body');
+    const closeBtn = document.querySelector('.close-button');
+    const importBtn = document.getElementById('import-btn');
+    const exportAllBtn = document.getElementById('export-all-btn');
+    const clearAllBtn = document.getElementById('clear-all-btn');
+
+    // Predefined colors for notes
+    const noteColors = [
+        '#fffacd', '#f0e68c', '#e6e6fa', '#d8bfd8', '#add8e6', 
+        '#b0e0e6', '#98fb98', '#f5deb3', '#ffdab9', '#ffc0cb'
+    ];
+
+    // Helper to get a contrasting text color (black or white) for any background
+    const getContrastColor = (hexColor) => {
+        if (!hexColor) return '#000000'; // Default to black
+        const r = parseInt(hexColor.substr(1, 2), 16);
+        const g = parseInt(hexColor.substr(3, 2), 16);
+        const b = parseInt(hexColor.substr(5, 2), 16);
+        // Using the YIQ formula to determine brightness
+        const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+        return (yiq >= 128) ? '#000000' : '#FFFFFF';
+    };
+
+    const getCharacterCount = (htmlString) => {
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = htmlString;
+        return tempDiv.innerText.length;
+    };
+
+    const getNotes = () => {
+        const notes = localStorage.getItem('notes');
+        return notes ? JSON.parse(notes) : [];
+    };
+
+    // Humorous messages for delete confirmation
+    const deleteMessages = [
+        "Are you sure you want to send this note to the digital void? 🚀 There's no coming back!",
+        "Delete this note? It will be gone forever, like tears in rain. 😢",
+        "Really delete? This note is about to perform a vanishing act! 🎩✨",
+        "Confirm deletion? This action is more permanent than a tattoo. ✒️",
+        "Is this note no longer sparking joy? ✨ Time to let it go!",
+        "You're about to erase these thoughts. Hope they weren't genius ideas! 💡"
+    ];
+
+    const saveNotes = (notes) => {
+        localStorage.setItem('notes', JSON.stringify(notes));
+    };
+
+    const createNoteElement = (noteData) => {
+        const { id, title, content, color, pinned, lastModified } = noteData;
+        const note = document.createElement('div');
+        note.classList.add('note');
+        if (pinned) note.classList.add('pinned');
+        note.setAttribute('data-id', id);
+        note.setAttribute('draggable', 'true');
+        note.style.backgroundColor = color;
+
+        const titleInput = document.createElement('input');
+        titleInput.type = 'text';
+        titleInput.placeholder = 'Title';
+        titleInput.value = title;
+
+        const contentArea = document.createElement('div');
+        contentArea.classList.add('note-content');
+        contentArea.setAttribute('contenteditable', 'true');
+        contentArea.setAttribute('placeholder', 'Take a note...');
+        contentArea.innerHTML = content;
+
+        const handleInput = () => {
+            updateNote(id, { title: titleInput.value, content: contentArea.innerHTML, lastModified: Date.now() });
+            charCount.textContent = `${getCharacterCount(contentArea.innerHTML)} characters`;
+            timestamp.textContent = `Last modified: ${new Date(Date.now()).toLocaleString()}`;
+        };
+
+        titleInput.addEventListener('input', handleInput);
+        contentArea.addEventListener('input', handleInput);
+        contentArea.addEventListener('paste', (e) => handlePaste(e, handleInput));
+
+        const footer = document.createElement('div');
+        footer.classList.add('note-footer');
+        footer.style.color = getContrastColor(color);
+
+        const timestamp = document.createElement('span');
+        timestamp.textContent = `Last modified: ${new Date(lastModified).toLocaleString()}`;
+
+        const charCount = document.createElement('span');
+        charCount.textContent = `${getCharacterCount(content)} characters`;
+
+        footer.appendChild(timestamp);
+        footer.appendChild(charCount);
+
+        const buttons = document.createElement('div');
+        buttons.classList.add('note-buttons');
+        buttons.style.backgroundColor = 'transparent';
+
+        const pinBtn = document.createElement('button');
+        pinBtn.innerHTML = `<i class="fas fa-thumbtack"></i>`;
+        pinBtn.classList.add('btn-pin');
+        pinBtn.title = pinned ? 'Let it join the common folk again.' : "Stick this one to the top, it's important!";
+        pinBtn.addEventListener('click', () => togglePin(id));
+
+        const colorBtn = document.createElement('button');
+        colorBtn.innerHTML = `<i class="fas fa-palette"></i>`;
+        colorBtn.classList.add('btn-color');
+        colorBtn.title = 'Give this note a new paint job!';
+
+        let currentColorIndex = noteColors.indexOf(color);
+        if (currentColorIndex === -1) currentColorIndex = 0; // Fallback
+
+        colorBtn.addEventListener('click', () => {
+            currentColorIndex = (currentColorIndex + 1) % noteColors.length;
+            const newColor = noteColors[currentColorIndex];
+            note.style.backgroundColor = newColor;
+            updateNote(id, { color: newColor });
+            footer.style.color = getContrastColor(newColor);
+        });
+
+        const downloadBtn = document.createElement('button');
+        downloadBtn.innerHTML = `<i class="fas fa-download"></i>`;
+        downloadBtn.classList.add('btn-download');
+        downloadBtn.title = 'Save this note to your computer, just in case.';
+        downloadBtn.addEventListener('click', () => downloadNote(title, content));
+
+        const pasteBtn = document.createElement('button');
+        pasteBtn.innerHTML = `<i class="fas fa-paste"></i>`;
+        pasteBtn.classList.add('btn-paste');
+        pasteBtn.title = "Paste from the clipboard. Hope it's good!";
+        pasteBtn.addEventListener('click', async () => {
+            const text = await navigator.clipboard.readText();
+            document.execCommand('insertText', false, text);
+            handleInput();
+        });
+
+        const copyBtn = document.createElement('button');
+        copyBtn.innerHTML = `<i class="fas fa-copy"></i>`;
+        copyBtn.classList.add('btn-copy');
+        copyBtn.title = 'Copy the plain words, none of the fancy stuff.';
+        copyBtn.addEventListener('click', () => {
+            copyNoteContent(contentArea.innerText, copyBtn);
+        });
+
+        const copyHtmlBtn = document.createElement('button');
+        copyHtmlBtn.innerHTML = `<i class="fab fa-html5"></i>`;
+        copyHtmlBtn.classList.add('btn-copy-html');
+        copyHtmlBtn.title = 'Copy it all! The text, the pics, the whole shebang.';
+        copyHtmlBtn.addEventListener('click', () => {
+            copyNoteAsHtml(contentArea.innerHTML, copyHtmlBtn);
+        });
+
+        const exportXmlBtn = document.createElement('button');
+        exportXmlBtn.innerHTML = `<i class="fas fa-file-code"></i>`;
+        exportXmlBtn.classList.add('btn-export-xml');
+        exportXmlBtn.title = 'Export this note as an XML file.';
+        exportXmlBtn.addEventListener('click', () => exportNoteAsXml(noteData));
+
+        const previewBtn = document.createElement('button');
+        previewBtn.innerHTML = `<i class="fas fa-expand"></i>`;
+        previewBtn.classList.add('btn-preview');
+        previewBtn.title = 'See your masterpiece in its full glory!';
+        previewBtn.style.display = 'none'; // Initially hidden
+        previewBtn.addEventListener('click', () => {
+            openPreviewModal(note.cloneNode(true));
+        });
+
+        const clearBtn = document.createElement('button');
+        clearBtn.innerHTML = `<i class="fas fa-eraser"></i>`;
+        clearBtn.classList.add('btn-clear');
+        clearBtn.title = 'Erase everything. A fresh start!';
+        clearBtn.addEventListener('click', () => {
+            titleInput.value = '';
+            contentArea.innerHTML = '';
+            handleInput(); // Save the cleared state
+        });
+
+        const copyFeedback = document.createElement('div');
+        copyFeedback.classList.add('copy-feedback');
+        copyFeedback.textContent = 'Copied!';
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.innerHTML = `<i class="fas fa-trash"></i>`;
+        deleteBtn.classList.add('btn-delete');
+        deleteBtn.title = 'Send this note to the digital abyss!';
+        deleteBtn.addEventListener('click', () => {
+            deleteNote(id);
+        });
+
+        // Add all buttons to the grid
+        buttons.appendChild(pinBtn);
+        buttons.appendChild(previewBtn);
+        buttons.appendChild(colorBtn);
+        buttons.appendChild(pasteBtn);
+        buttons.appendChild(clearBtn);
+        buttons.appendChild(copyBtn);
+        buttons.appendChild(copyHtmlBtn);
+        buttons.appendChild(downloadBtn);
+        buttons.appendChild(exportXmlBtn);
+        buttons.appendChild(deleteBtn);
+        
+        copyHtmlBtn.appendChild(copyFeedback.cloneNode(true));
+        copyBtn.appendChild(copyFeedback);
+
+        note.appendChild(titleInput);
+        note.appendChild(contentArea);
+        note.appendChild(footer);
+        note.appendChild(buttons);
+
+        note.addEventListener('dragstart', () => {
+            note.classList.add('dragging');
+        });
+
+        note.addEventListener('dragend', () => {
+            note.classList.remove('dragging');
+        });
+
+        return note;
+    };
+
+    const renderNotes = () => {
+        const notes = getNotes();
+        notesContainer.innerHTML = '';
+        notes.forEach(noteData => {
+            const noteElement = createNoteElement(noteData);
+            // We need to append to DOM first to check for overflow
+            notesContainer.appendChild(noteElement);
+            const contentArea = noteElement.querySelector('.note-content');
+            const previewBtn = noteElement.querySelector('.btn-preview');
+            if (contentArea.scrollHeight > contentArea.clientHeight) {
+                previewBtn.style.display = 'flex';
+            }
+        });
+    };
+
+    const addNote = () => {
+        const notes = getNotes();
+        const newNote = {
+            id: Date.now(),
+            title: `Note ${notes.length + 1}`,
+            content: '',
+            color: noteColors[notes.length % noteColors.length],
+            pinned: false,
+            lastModified: Date.now()
+        };
+        const updatedNotes = [...notes, newNote];
+        saveNotes(updatedNotes);
+        renderNotes();
+    };
+
+    const updateNote = (id, updates) => {
+        const notes = getNotes();
+        const noteToUpdate = notes.find(note => note.id === id);
+        if (noteToUpdate) {
+            Object.assign(noteToUpdate, updates);
+            saveNotes(notes);
+        }
+    };
+
+    const deleteNote = (id) => {
+        const notes = getNotes();
+        const noteToDelete = notes.find(note => note.id === id);
+        if (!noteToDelete) return;
+
+        // Check if the note is effectively empty
+        const isNoteEmpty = !noteToDelete.title.trim() && getCharacterCount(noteToDelete.content) === 0;
+
+        // Get a random confirmation message
+        const randomMessage = deleteMessages[Math.floor(Math.random() * deleteMessages.length)];
+
+        if (isNoteEmpty || confirm(randomMessage)) {
+            const updatedNotes = notes.filter(note => note.id !== id);
+            saveNotes(updatedNotes);
+            renderNotes();
+        }
+    };
+
+    const deleteAllNotes = () => {
+        const notes = getNotes();
+        if (notes.length === 0) {
+            alert("The canvas is already blank. Nothing to clear!");
+            return;
+        }
+
+        if (confirm("Whoa there! Are you sure you want to wipe the slate clean? Don't forget to use our 'Export All' Feature first! 💾")) {
+            saveNotes([]);
+            renderNotes();
+        }
+    };
+
+    const togglePin = (id) => {
+        const notes = getNotes();
+        const noteToUpdate = notes.find(note => note.id === id);
+        noteToUpdate.pinned = !noteToUpdate.pinned;
+        saveNotes(notes);
+        renderNotes(); // Re-render to apply 'pinned' class and order
+    };
+
+    const copyNoteContent = (content, buttonElement) => {
+        navigator.clipboard.writeText(content).then(() => {
+            const feedback = buttonElement.querySelector('.copy-feedback');
+            feedback.style.opacity = '1';
+            setTimeout(() => {
+                feedback.style.opacity = '0';
+            }, 1500);
+        }).catch(err => {
+            console.error('Failed to copy: ', err);
+        });
+    };
+
+    const copyNoteAsHtml = (htmlContent, buttonElement) => {
+        const blob = new Blob([htmlContent], { type: 'text/html' });
+        const clipboardItem = new ClipboardItem({ 'text/html': blob });
+        navigator.clipboard.write([clipboardItem]).then(() => {
+            const feedback = buttonElement.querySelector('.copy-feedback');
+            if (feedback) {
+                feedback.style.opacity = '1';
+                setTimeout(() => {
+                    feedback.style.opacity = '0';
+                }, 1500);
+            }
+        }).catch(err => {
+            console.error('Failed to copy HTML: ', err);
+        });
+    };
+
+    const handlePaste = (e, onUpdate) => {
+        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+        for (const item of items) {
+            if (item.kind === 'file' && item.type.startsWith('image/')) {
+                e.preventDefault();
+                const file = item.getAsFile();
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = document.createElement('img');
+                    img.src = event.target.result;
+                    document.execCommand('insertHTML', false, img.outerHTML);
+                    onUpdate(); // Trigger save after image is inserted
+                };
+                reader.readAsDataURL(file);
+                return; // Stop after handling the first image
+            }
+        }
+    };
+
+    const downloadNote = (title, content) => {
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = content;
+        const blob = new Blob([tempDiv.innerText], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${title || 'note'}.txt`;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
+    // --- XML Import/Export ---
+
+    const noteToXml = (note) => {
+        return `
+    <note>
+        <id>${note.id}</id>
+        <title><![CDATA[${note.title}]]></title>
+        <content><![CDATA[${note.content}]]></content>
+        <color>${note.color}</color>
+        <pinned>${note.pinned}</pinned>
+        <lastModified>${note.lastModified}</lastModified>
+    </note>`;
+    };
+
+    const exportNoteAsXml = (noteData) => {
+        const xmlString = `<notes>${noteToXml(noteData)}</notes>`;
+        const blob = new Blob([xmlString], { type: 'application/xml' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${noteData.title || 'note'}.xml`;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
+    const exportAllNotesAsXml = () => {
+        const notes = getNotes();
+        if (notes.length === 0) {
+            alert("There are no notes to export!");
+            return;
+        }
+        const xmlString = `<notes>${notes.map(noteToXml).join('')}\n</notes>`;
+        const blob = new Blob([xmlString], { type: 'application/xml' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'all_notes.xml';
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
+    const importNotesFromXml = (xmlString) => {
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(xmlString, "application/xml");
+        const importedNotes = [...xmlDoc.querySelectorAll('note')].map(noteNode => ({
+            id: Number(noteNode.querySelector('id').textContent),
+            title: noteNode.querySelector('title').textContent,
+            content: noteNode.querySelector('content').textContent,
+            color: noteNode.querySelector('color').textContent,
+            pinned: noteNode.querySelector('pinned').textContent === 'true',
+            lastModified: Number(noteNode.querySelector('lastModified').textContent),
+        }));
+
+        const currentNotes = getNotes();
+        const currentIds = new Set(currentNotes.map(n => n.id));
+        const newNotes = importedNotes.filter(n => !currentIds.has(n.id));
+
+        if (newNotes.length > 0) {
+            saveNotes([...currentNotes, ...newNotes]);
+            renderNotes();
+        }
+        alert(`Import complete! ${newNotes.length} new notes added. ${importedNotes.length - newNotes.length} duplicates were skipped.`);
+    };
+
+
+    // Modal Logic
+    const openPreviewModal = (noteNode) => {
+        modalBody.innerHTML = ''; // Clear previous content
+        const clonedNote = noteNode.cloneNode(true);
+        
+        // Remove unnecessary parts for preview
+        clonedNote.querySelector('.note-buttons').remove();
+        clonedNote.querySelector('.note-footer').remove();
+        clonedNote.style.cursor = 'default';
+        clonedNote.setAttribute('draggable', 'false');
+        clonedNote.querySelector('.note-content').style.maxHeight = 'none';
+
+        modalBody.appendChild(clonedNote);
+        modal.style.display = 'flex';
+    };
+
+    const closeModal = () => {
+        modal.style.display = 'none';
+    };
+
+    closeBtn.addEventListener('click', closeModal);
+    window.addEventListener('click', (event) => {
+        if (event.target == modal) {
+            closeModal();
+        }
+    });
+
+    addNoteBtn.addEventListener('click', addNote);
+
+    notesContainer.addEventListener('dragover', e => {
+        e.preventDefault();
+        const draggingNote = document.querySelector('.dragging');
+        if (draggingNote) {
+            const afterElement = getDragAfterElement(notesContainer, e.clientY);
+            if (afterElement == null) {
+                notesContainer.appendChild(draggingNote);
+            } else {
+                notesContainer.insertBefore(draggingNote, afterElement);
+            }
+        }
+    });
+
+    notesContainer.addEventListener('drop', () => {
+        const newOrder = [...notesContainer.querySelectorAll('.note')].map(note => {
+            const id = Number(note.getAttribute('data-id'));
+            const notes = getNotes();
+            // Find the original note data to preserve properties not in the DOM
+            return notes.find(n => n.id === id);
+        });
+        saveNotes(newOrder);
+    });
+
+    function getDragAfterElement(container, y) {
+        const draggableElements = [...container.querySelectorAll('.note:not(.dragging)')];
+
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child };
+            } else {
+                return closest;
+            }
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+
+    // Search functionality
+    searchBar.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        const notes = notesContainer.querySelectorAll('.note');
+        notes.forEach(note => {
+            const title = note.querySelector('input[type="text"]').value.toLowerCase();
+            const content = note.querySelector('.note-content').innerText.toLowerCase();
+            if (title.includes(searchTerm) || content.includes(searchTerm)) {
+                note.style.display = '';
+            } else {
+                note.style.display = 'none';
+            }
+        });
+    });
+
+    // Dark Mode
+    const setDarkMode = (isDark) => {
+        if (isDark) {
+            document.body.classList.add('dark-mode');
+            localStorage.setItem('darkMode', 'enabled');
+        } else {
+            document.body.classList.remove('dark-mode');
+            localStorage.setItem('darkMode', 'disabled');
+        }
+    };
+
+    themeToggle.addEventListener('change', () => setDarkMode(themeToggle.checked));
+
+    // Import/Export Event Listeners
+    exportAllBtn.addEventListener('click', exportAllNotesAsXml);
+    clearAllBtn.addEventListener('click', deleteAllNotes);
+    importBtn.addEventListener('click', () => {
+        document.getElementById('import-file-input').click();
+    });
+    document.getElementById('import-file-input').addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => importNotesFromXml(e.target.result);
+            reader.readAsText(file);
+        }
+        event.target.value = null; // Reset input
+    });
+
+    // Initial setup
+    if (localStorage.getItem('darkMode') === 'enabled') {
+        themeToggle.checked = true;
+        setDarkMode(true);
+    }
+    renderNotes();
+});
+</script>
+
+</body>
+</html>
